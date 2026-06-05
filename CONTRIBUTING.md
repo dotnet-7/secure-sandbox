@@ -254,7 +254,7 @@ Update version in:
 Create `CHANGELOG.md`:
 
 ```markdown
-## [1.1.0] - 2025-06-05
+## [0.0.2] - 2026-06-05
 ### Added
 - Custom module whitelist support
 - Memory monitoring feature
@@ -275,7 +275,7 @@ python -m build
 ### 4. Test Installation
 
 ```bash
-pip install dist/secure_sandbox-1.1.0.tar.gz
+pip install dist/secure_sandbox-0.0.2.tar.gz
 pytest tests/
 ```
 
