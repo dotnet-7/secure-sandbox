@@ -1,0 +1,11 @@
+{
+  "max_gas": 5000,
+  "max_recursion_depth": 50,
+  "allow_imports": true,
+  "allowed_modules": ["math", "json", "datetime"],
+  "allow_dunder_access": false,
+  "allow_private_attrs": false,
+  "allow_comprehensions": true,
+  "allow_lambdas": true,
+  "allow_classes": false
+}

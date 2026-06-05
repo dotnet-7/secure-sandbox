@@ -1,0 +1,330 @@
+Metadata-Version: 2.4
+Name: secure-sandbox
+Version: 0.0.1
+Summary: 高安全性Python沙箱库 - 用于安全执行不可信代码
+Home-page: https://github.com/yourname/secure-sandbox
+Author: Python Security Architect
+Author-email: Python Security Architect <security@example.com>
+License: MIT
+Project-URL: Homepage, https://github.com/yourname/secure-sandbox
+Project-URL: Documentation, https://github.com/yourname/secure-sandbox/wiki
+Project-URL: Repository, https://github.com/yourname/secure-sandbox
+Project-URL: Issues, https://github.com/yourname/secure-sandbox/issues
+Keywords: sandbox,security,code execution,AI code,unsafe code,restricted execution,gas mechanism,AST whitelist
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Security
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: flake8>=6.0; extra == "dev"
+Dynamic: author
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
+# Secure Sandbox
+
+[![PyPI version](https://badge.fury.io/py/secure-sandbox.svg)](https://badge.fury.io/py/secure-sandbox)
+[![Python versions](https://img.shields.io/pypi/pyversions/secure-sandbox.svg)](https://pypi.org/project/secure-sandbox)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**A high-security Python sandbox library for safely executing untrusted third-party code (such as AI-generated code)**
+
+[中文文档 (Chinese Documentation)](docs/README_CN.md)
+
+## Core Features
+
+### 1. Gas Mechanism - Prevent CPU DoS Attacks
+- ✅ Automatically inject Gas checks in every loop and function call
+- ✅ Immediately throw `GasLimitExceeded` exception when Gas quota is exhausted
+- ✅ Effectively defend against infinite loops and resource exhaustion attacks
+
+### 2. AST Whitelist Validation
+- ✅ Strict AST node whitelist mechanism
+- ✅ Reject dangerous AST nodes (Import, Async, Yield, etc.)
+- ✅ Block dangerous operations at compile time
+
+### 3. Attribute Access Interception
+- ✅ All attribute accesses are rewritten to `__sandbox_getattr__`
+- ✅ Strict attribute blacklist (40+ dangerous attributes like `__class__`, `__subclasses__`)
+- ✅ Prevent sandbox escape via reflection chains
+
+### 4. Import Whitelist Control
+- ✅ Configurable module import whitelist
+- ✅ Default allows safe modules (math, json, datetime, etc.)
+- ✅ Reject dangerous modules (os, sys, subprocess, etc.)
+
+### 5. Fully Configurable
+- ✅ All security policies can be customized
+- ✅ Gas quota, AST whitelist, attribute blacklist, module whitelist all configurable
+- ✅ Support flexible security level adjustments
+
+## Installation
+
+```bash
+pip install secure-sandbox
+```
+
+## Quick Start
+
+### Basic Usage
+
+```python
+from secure_sandbox import safe_execute
+
+# Execute safe code
+code = """
+def factorial(n):
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+print(f"Factorial of 5: {factorial(5)}")
+"""
+
+result = safe_execute(code, max_gas=100)
+print(f"Remaining Gas: {result['remaining_gas']}")
+```
+
+### Prevent Infinite Loops
+
+```python
+from secure_sandbox import SecureSandbox, GasLimitExceeded
+
+malicious_code = """
+i = 0
+while True:
+    i += 1
+"""
+
+sandbox = SecureSandbox()
+try:
+    sandbox.safe_execute(malicious_code, max_gas=50)
+except GasLimitExceeded as e:
+    print(f"Successfully intercepted infinite loop: {e}")
+```
+
+### Prevent Sandbox Escape
+
+```python
+from secure_sandbox import SecureSandbox, SandboxSecurityError
+
+escape_code = """
+result = [].__class__.__base__.__subclasses__()
+"""
+
+sandbox = SecureSandbox()
+try:
+    sandbox.safe_execute(escape_code, max_gas=100)
+except SandboxSecurityError as e:
+    print(f"Successfully intercepted escape attack: {e}")
+```
+
+### Use Module Imports
+
+```python
+from secure_sandbox import safe_execute
+
+code = """
+import math
+result = math.sqrt(16)
+print(f"sqrt(16) = {result}")
+
+from json import dumps
+json_str = dumps({"name": "Alice", "age": 25})
+print(json_str)
+"""
+
+result = safe_execute(code, max_gas=100)
+```
+
+## Advanced Configuration
+
+### Custom Security Policy
+
+```python
+from secure_sandbox import SecureSandbox, SecurityConfig
+
+# Create custom configuration
+config = SecurityConfig(
+    # Gas configuration
+    max_gas=5000,              # Maximum Gas quota
+    max_recursion_depth=50,    # Maximum recursion depth
+    
+    # Import configuration
+    allow_imports=True,        # Allow imports
+    allowed_modules={'math', 'json'},  # Only allow these modules
+    
+    # AST node configuration (optional)
+    ast_whitelist={'For', 'While', 'FunctionDef', ...},  # Custom AST whitelist
+    ast_blacklist={'Import', 'Try', ...},  # Custom AST blacklist
+    
+    # Attribute access configuration
+    allow_dunder_access=False,  # Disallow magic methods
+    allow_private_attrs=False,  # Disallow private attributes
+    dangerous_attributes={'__class__', '__globals__', ...},  # Custom dangerous attributes
+    safe_attributes={'append', 'upper', ...},  # Custom safe attributes
+    
+    # Feature switches
+    allow_comprehensions=True,  # Allow comprehensions
+    allow_lambdas=True,         # Allow Lambda
+    allow_classes=False,        # Disallow class definitions
+)
+
+sandbox = SecureSandbox(config)
+result = sandbox.safe_execute(code, max_gas=100)
+```
+
+### Add Custom Modules to Whitelist
+
+```python
+from secure_sandbox import SecurityConfig, DEFAULT_ALLOWED_MODULES
+
+# Extend default module whitelist
+custom_modules = DEFAULT_ALLOWED_MODULES.copy()
+custom_modules.update({
+    'numpy',    # Add numpy
+    'pandas',   # Add pandas
+})
+
+config = SecurityConfig(
+    allowed_modules=custom_modules
+)
+```
+
+## Configuration Details
+
+### SecurityConfig Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `max_gas` | int | 10000 | Maximum Gas quota to prevent infinite loops |
+| `max_recursion_depth` | int | 100 | Maximum recursion depth |
+| `allow_imports` | bool | True | Whether to allow module imports |
+| `allowed_modules` | Set[str] | DEFAULT_ALLOWED_MODULES | Module import whitelist |
+| `ast_whitelist` | Set[str] | AST_WHITELIST | Allowed AST node whitelist |
+| `ast_blacklist` | Set[str] | AST_BLACKLIST | Forbidden AST node blacklist |
+| `allow_dunder_access` | bool | False | Whether to allow magic method access |
+| `allow_private_attrs` | bool | False | Whether to allow private attribute access |
+| `dangerous_attributes` | Set[str] | DANGEROUS_ATTRIBUTES | Dangerous attribute blacklist |
+| `safe_attributes` | Set[str] | SAFE_ATTRIBUTES | Safe attribute whitelist |
+| `allow_comprehensions` | bool | True | Whether to allow comprehensions |
+| `allow_lambdas` | bool | True | Whether to allow Lambda expressions |
+| `allow_classes` | bool | True | Whether to allow class definitions |
+
+### Default Allowed Modules
+
+```
+math        - Mathematical operations
+json        - JSON processing
+datetime    - Date and time
+collections - Advanced data structures
+itertools   - Iterator tools
+functools   - Function tools
+operator    - Operator functions
+typing      - Type hints
+decimal     - High-precision math
+fractions   - Fraction operations
+statistics  - Statistical functions
+array       - Arrays
+copy        - Copy tools
+re          - Regular expressions
+random      - Random numbers
+```
+
+## API Documentation
+
+### `safe_execute(code_str, max_gas, config)`
+
+Convenience function for quick code execution
+
+**Parameters**:
+- `code_str` (str): Code string to execute
+- `max_gas` (int): Maximum Gas quota, default 10000
+- `config` (SecurityConfig, optional): Security configuration
+
+**Returns**:
+```python
+{
+    'success': True,              # Execution success
+    'locals': {...},              # Local variables dictionary
+    'remaining_gas': 9999,        # Remaining Gas
+    'total_checks': 100,          # Total check count
+}
+```
+
+**Exceptions**:
+- `GasLimitExceeded`: Gas quota exhausted
+- `SandboxSecurityError`: Security violation
+- `ASTValidationError`: AST validation failed
+
+## Comparison with Traditional Solutions
+
+| Feature | RestrictedPython | Secure Sandbox |
+|---------|------------------|----------------|
+| CPU DoS Defense | ❌ None | ✅ Gas mechanism |
+| Sandbox Escape Defense | ⚠️ Limited | ✅ Strict interception |
+| Import Control | ❌ None | ✅ Whitelist mechanism |
+| Configurability | ⚠️ Basic | ✅ Fully configurable |
+| Performance Overhead | Low | Medium (10-15%) |
+
+## Security Best Practices
+
+1. **Set reasonable Gas quota**: Based on code complexity, recommend 100-1000
+2. **Limit imported modules**: Only allow necessary modules
+3. **Monitor execution results**: Check remaining_gas and exception logs
+4. **Regular audit**: Check if whitelist needs updating
+5. **Add timeout mechanism**: Combine with signal or threading for dual protection
+
+## Known Limitations
+
+1. **Performance overhead**: Gas checks add ~10-15% overhead
+2. **Feature limitations**: Cannot import dangerous modules or use certain advanced features
+3. **Reflection limitations**: Normal reflection operations are also restricted
+
+## Contributing
+
+Issues and Pull Requests are welcome!
+
+Development environment setup:
+
+```bash
+git clone https://github.com/yourname/secure-sandbox.git
+cd secure-sandbox
+pip install -e ".[dev]"
+pytest tests/
+```
+
+## License
+
+MIT License
+
+## Author
+
+Python Security Architect
+
+## Version History
+
+- **v0.0.1** - Initial version
+  - Implemented Gas mechanism
+  - Implemented AST whitelist validation
+  - Implemented attribute access interception
+  - Implemented Import whitelist control
+  - Fully configurable security policies
+  - Complete test suite

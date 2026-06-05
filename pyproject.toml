@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secure-sandbox"
+version = "0.0.1"
+description = "高安全性Python沙箱库 - 用于安全执行不可信代码"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "senyangcai", email = "158119447@qq.com"}
+]
+keywords = [
+    "sandbox",
+    "security",
+    "code execution",
+    "AI code",
+    "unsafe code",
+    "restricted execution",
+    "gas mechanism",
+    "AST whitelist",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/dotnet-7/secure-sandbox"
+Documentation = "https://github.com/dotnet-7/secure-sandbox/wiki"
+Repository = "https://github.com/dotnet-7/secure-sandbox"
+Issues = "https://github.com/dotnet-7/secure-sandbox/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "mypy>=1.0",
+    "flake8>=6.0",
+]
+
+[project.scripts]
+secure-sandbox = "secure_sandbox.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
